@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Approov WebView Demo</title>
+  <style>
+    :root {
+      --bg: #f2eadc;
+      --panel: rgba(255, 251, 245, 0.88);
+      --line: rgba(74, 50, 17, 0.12);
+      --text: #241b12;
+      --muted: #6a5640;
+      --accent: #0f7a68;
+      --accent-dark: #095f51;
+      --warning: #8d3d16;
+      --shadow: 0 24px 60px rgba(50, 30, 8, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at top left, rgba(15, 122, 104, 0.16), transparent 32%),
+        radial-gradient(circle at bottom right, rgba(255, 144, 93, 0.18), transparent 28%),
+        linear-gradient(160deg, #f7f0e4 0%, #ece1d1 48%, #dfd4c2 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    main {
+      width: min(920px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(16px);
+    }
+
+    .hero {
+      padding: 28px 28px 12px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(15, 122, 104, 0.08), rgba(255, 255, 255, 0));
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 54px);
+      line-height: 0.96;
+      letter-spacing: -0.04em;
+      max-width: 12ch;
+    }
+
+    .summary {
+      margin: 16px 0 0;
+      max-width: 64ch;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.55;
+    }
+
+    .grid {
+      display: grid;
+      gap: 18px;
+      padding: 20px 24px 28px;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.68);
+      padding: 18px;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stack {
+      display: grid;
+      gap: 12px;
+    }
+
+    .stack p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 14px 18px;
+      font: inherit;
+      font-weight: 700;
+      color: white;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      cursor: pointer;
+      box-shadow: 0 12px 22px rgba(15, 122, 104, 0.22);
+    }
+
+    button.secondary {
+      background: #efe7da;
+      color: var(--text);
+      box-shadow: none;
+      border: 1px solid var(--line);
+    }
+
+    .meta {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .chip strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      min-height: 260px;
+      overflow: auto;
+      border-radius: 18px;
+      background: #171412;
+      color: #f6efe7;
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .shape-panel {
+      display: grid;
+      gap: 18px;
+      align-items: center;
+      grid-template-columns: minmax(180px, 240px) 1fr;
+    }
+
+    .shape-stage {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      border-radius: 22px;
+      border: 1px dashed var(--line);
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(247, 238, 228, 0.8)),
+        radial-gradient(circle at top, rgba(15, 122, 104, 0.08), transparent 60%);
+      overflow: hidden;
+    }
+
+    .shape {
+      width: 140px;
+      height: 140px;
+      background: linear-gradient(160deg, #0f7a68, #2ba48f);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 22px 40px rgba(15, 122, 104, 0.22);
+    }
+
+    .shape.circle {
+      border-radius: 999px;
+    }
+
+    .shape.square {
+      border-radius: 24px;
+    }
+
+    .shape.rectangle {
+      width: 180px;
+      height: 118px;
+      border-radius: 26px;
+    }
+
+    .shape.triangle {
+      width: 0;
+      height: 0;
+      background: transparent;
+      border-left: 82px solid transparent;
+      border-right: 82px solid transparent;
+      border-bottom: 146px solid #118e79;
+      box-shadow: none;
+    }
+
+    .shape-caption {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+    }
+
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      background: var(--warning);
+      box-shadow: 0 0 0 6px rgba(141, 61, 22, 0.12);
+    }
+
+    .status-dot.ok {
+      background: var(--accent);
+      box-shadow: 0 0 0 6px rgba(15, 122, 104, 0.14);
+    }
+
+    .notes {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    @media (max-width: 760px) {
+      .shape-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .shape-stage {
+        min-height: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="hero">
+      <p class="eyebrow">Android WebView + Approov</p>
+      <h1>Remote calls stay inside the native Approov path.</h1>
+      <p class="summary">
+        This quickstart page uses normal JavaScript <code>fetch()</code>, but the transport is replaced
+        by the reusable Approov WebView helper package. The page never sends the Shapes
+        <code>api-key</code> directly and never needs access to the Approov SDK.
+      </p>
+    </section>
+
+    <section class="grid">
+      <section class="panel">
+        <h2>Live Request</h2>
+        <div class="actions">
+          <button id="refresh">Call /v2/shapes</button>
+          <button id="clear" class="secondary">Clear Output</button>
+        </div>
+      </section>
+
+      <section class="meta">
+        <article class="chip">
+          <strong>Endpoint</strong>
+          <span id="endpoint">https://shapes.approov.io/v2/shapes</span>
+        </article>
+        <article class="chip">
+          <strong>Status</strong>
+          <span class="status">
+            <span class="status-dot" id="status-dot"></span>
+            <span id="status-text">Waiting for first request</span>
+          </span>
+        </article>
+      </section>
+
+      <section class="panel">
+        <h2>Response</h2>
+        <pre id="output">The page will issue a protected fetch on load.</pre>
+      </section>
+
+      <section class="panel">
+        <h2>Decoded Shape</h2>
+        <div class="shape-panel">
+          <div class="shape-stage" id="shape-stage">
+            <div class="shape square" id="shape-display" aria-hidden="true"></div>
+          </div>
+          <div class="shape-caption">
+            <p id="shape-message">Waiting for the API response.</p>
+            <p id="shape-detail">
+              The API returns <code>status</code> and <code>shape</code>. When the Approov token is valid,
+              the page decodes the payload and draws the requested shape here.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Form Submit Test</h2>
+        <div class="stack">
+          <p>
+            This is a plain HTML form. Submitting it should follow the same native Approov path as
+            <code>fetch()</code> and replace the page with the JSON response from
+            <code>/v2/shapes</code>.
+          </p>
+          <form action="https://shapes.approov.io/v2/shapes" method="get">
+            <button type="submit" class="secondary">Submit HTML Form</button>
+          </form>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <!--
+    Fallback include:
+    ApproovWebViewSupport injects this file automatically at document-start on modern WebView builds.
+    Keeping the script tag here makes the quickstart more portable and lets the page keep working on
+    providers that do not expose DOCUMENT_START_SCRIPT yet.
+  -->
+  <script src="approov-webview-bridge.js"></script>
+  <script>
+    const endpoint = "https://shapes.approov.io/v2/shapes";
+    const output = document.getElementById("output");
+    const shapeDisplay = document.getElementById("shape-display");
+    const shapeMessage = document.getElementById("shape-message");
+    const shapeDetail = document.getElementById("shape-detail");
+    const statusDot = document.getElementById("status-dot");
+    const statusText = document.getElementById("status-text");
+
+    function setStatus(text, ok) {
+      statusText.textContent = text;
+      statusDot.classList.toggle("ok", Boolean(ok));
+    }
+
+    function clearShape() {
+      shapeDisplay.className = "shape square";
+      shapeDisplay.style.display = "none";
+      shapeMessage.textContent = "Waiting for the API response.";
+      shapeDetail.textContent = "The decoded shape will appear here after a successful call.";
+    }
+
+    function renderShape(code, jsonObject) {
+      let jsonDict = jsonObject;
+      let message = jsonDict["status"];
+      let shape = (jsonDict["shape"] || "").toLowerCase();
+      let image = null;
+
+      switch (shape) {
+        case "circle":
+          image = "circle";
+          break;
+
+        case "rectangle":
+          image = "rectangle";
+          break;
+
+        case "square":
+          image = "square";
+          break;
+
+        case "triangle":
+          image = "triangle";
+          break;
+
+        default:
+          message = `${code}: unknown shape '${shape}'`;
+      }
+
+      shapeMessage.textContent = message || `HTTP ${code}`;
+
+      if (image) {
+        shapeDisplay.className = `shape ${image}`;
+        shapeDisplay.style.display = "block";
+        shapeDetail.textContent = `Decoded shape: ${shape}.`;
+      } else {
+        shapeDisplay.style.display = "none";
+        shapeDetail.textContent = "The payload did not contain a supported shape.";
+      }
+    }
+
+    async function loadShapes() {
+      setStatus("Calling Approov-protected endpoint...", false);
+      clearShape();
+      output.textContent = "Requesting " + endpoint + " ...";
+
+      try {
+        // The page code intentionally stays boring: a standard fetch() call with no Approov logic
+        // and no API key. The reusable Android helper package injects the bridge and reroutes the
+        // transport natively so future fetch/XHR calls follow the same protected path automatically.
+        const response = await fetch(endpoint, {
+          headers: {
+            "accept": "application/json"
+          },
+          method: "GET"
+        });
+
+        const bodyText = await response.text();
+        let parsedJson = null;
+        let prettyBody = bodyText || "(empty body)";
+
+        if (bodyText) {
+          try {
+            parsedJson = JSON.parse(bodyText);
+            prettyBody = JSON.stringify(parsedJson, null, 2);
+          } catch (parseError) {
+            prettyBody = bodyText;
+          }
+        }
+
+        setStatus("HTTP " + response.status + " " + response.statusText, response.ok);
+        output.textContent = prettyBody;
+
+        if (response.ok && parsedJson) {
+          renderShape(response.status, parsedJson);
+        } else if (!response.ok) {
+          shapeMessage.textContent = `HTTP ${response.status} ${response.statusText}`;
+          shapeDetail.textContent = "Approov or API validation rejected the request.";
+        }
+      } catch (error) {
+        setStatus("Request failed", false);
+        clearShape();
+        shapeMessage.textContent = "Request failed before a shape could be rendered.";
+        shapeDetail.textContent = "Check the Approov configuration and device registration.";
+        output.textContent = (error && error.stack) ? error.stack : String(error);
+      }
+    }
+
+    document.getElementById("refresh").addEventListener("click", loadShapes);
+    document.getElementById("clear").addEventListener("click", function () {
+      setStatus("Waiting for next request", false);
+      clearShape();
+      output.textContent = "";
+    });
+
+    clearShape();
+    loadShapes();
+  </script>
+</body>
+</html>
