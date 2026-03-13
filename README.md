@@ -28,6 +28,64 @@ Because of that, the safe approach is:
 10. Sync response cookies back into the WebView cookie store.
 11. Return the response back to JavaScript or, for form navigations, render the response back into the current document.
 
+## Architecture Flow
+
+```mermaid
+flowchart LR
+    subgraph Web["Trusted WebView Page"]
+        Page["HTML / app JavaScript"]
+        Bridge["approov-webview-bridge.js"]
+    end
+
+    subgraph Native["Android Native Layer"]
+        Listener["WebViewCompat.addWebMessageListener(...)"]
+        Support["ApproovWebViewSupport"]
+        CookieSync["Cookie sync with CookieManager"]
+        Client["Approov-protected OkHttpClient"]
+    end
+
+    subgraph Remote["Remote Services"]
+        Approov["Approov SDK integration"]
+        API["Protected API"]
+    end
+
+    Page -->|"fetch / XHR / form submit"| Bridge
+    Bridge -->|"JSON request envelope"| Listener
+    Listener --> Support
+    Support -->|"copy cookies into native request"| CookieSync
+    CookieSync --> Client
+    Support -->|"inject secret headers"| Client
+    Client -->|"request Approov token"| Approov
+    Approov -->|"approov-token + dynamic pinning"| Client
+    Client -->|"HTTPS request"| API
+    API -->|"HTTP response + Set-Cookie"| Client
+    Client --> CookieSync
+    Support -->|"JSON response envelope or HTML body"| Bridge
+    Bridge -->|"Response object or rendered document"| Page
+```
+
+## Comparison With Other Approaches
+
+| Approach | What it does well | Main downside | Best fit |
+| --- | --- | --- | --- |
+| Current approach: document-start JS interception + scoped WebMessage bridge + native `OkHttp` | Works with public Android APIs, keeps secrets native, supports `fetch`, XHR, and same-frame forms | Does not transparently cover every browser network primitive | Hybrid apps where page code owns protected API traffic |
+| `WebViewClient.shouldInterceptRequest(...)` proxying | Useful for asset serving, custom responses, and some inspection | Not a reliable way to mutate arbitrary outgoing headers before the WebView stack sends them (see more below) | Static assets, offline content, or narrow resource interception |
+| `addJavascriptInterface(...)` bridge | Simpler to wire up on older examples | Larger attack surface and weaker trust scoping than origin-scoped WebMessage listeners | Legacy compatibility only |
+| Same-origin backend/BFF or reverse proxy | Preserves normal browser behavior and covers subresources, redirects, Service Workers, and WebSockets better | Requires server-side infrastructure and operational ownership | Apps that need full browser semantics for protected traffic |
+| Native UI + native networking only | Strongest control over networking and security policy | Gives up most WebView reuse and increases rewrite cost | Products that are primarily native rather than hybrid |
+
+### More about `shouldInterceptRequest(...)` approach
+
+`WebViewClient.shouldInterceptRequest(...)` is a response replacement hook, not a request mutation hook.
+
+- the callback gives us request metadata such as URL, method, and headers, but not a general way to edit the request and let the WebView continue sending it with extra headers
+- if we need to add `approov-token` or an API key, you usually end up re-executing the request yourself in native code and returning a synthetic `WebResourceResponse`
+- `WebResourceRequest` does not expose a general request body, so faithfully replaying arbitrary POST-style traffic is already incomplete..
+- `shouldInterceptRequest(...)` is only called for the initial URL in a redirect chain, while `WebResourceResponse` does not support causing a redirect with a `3xx` status code
+- Service Worker traffic uses a separate API surface (`ServiceWorkerController` / `ServiceWorkerClient`), so one hook does not cover all browser-managed networking
+
+If we proxy the request ourself, we are no longer "adding a header to the browser request". We are implementing a parallel browser transport and trying to map its result back into WebView. Browser semantics such as redirects, streaming, progress, cancellation, cookie behavior, and some scheme-specific behavior stop being native WebView behavior unless we would re-create them ourselfes but this seem to be a complex and prone to errors. 
+
 ## What This Quickstart Covers
 
 The reusable bridge in `app/src/main/java/approov/io/webviewjava/approovwebview/ApproovWebViewSupport.java` and `app/src/main/assets/approov-webview-bridge.js` covers:
