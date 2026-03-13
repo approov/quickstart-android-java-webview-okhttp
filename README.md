@@ -35,6 +35,7 @@ flowchart LR
     subgraph Web["Trusted WebView Page"]
         Page["HTML / app JavaScript"]
         Bridge["approov-webview-bridge.js"]
+        Render["Current WebView document"]
     end
 
     subgraph Native["Android Native Layer"]
@@ -60,8 +61,11 @@ flowchart LR
     Client -->|"HTTPS request"| API
     API -->|"HTTP response + Set-Cookie"| Client
     Client --> CookieSync
-    Support -->|"JSON response envelope or HTML body"| Bridge
-    Bridge -->|"Response object or rendered document"| Page
+    Support -->|"JSON response envelope"| Bridge
+    Bridge -->|"Response object for fetch / XHR"| Page
+    Support -->|"HTML body for same-frame form submit"| Bridge
+    Bridge -->|"document.open/write/close"| Render
+    Render -->|"updated content visible in WebView"| Page
 ```
 
 ## Comparison With Other Approaches
